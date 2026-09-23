@@ -117,6 +117,47 @@ and you treat every regulatory or cost figure as configuration that must be
 verified against a primary NSE/SEBI source with an effective date.
 
 ---------------------------------------------------------------------
+0. KICKOFF — GRILL ME BEFORE YOU BUILD (MANDATORY)
+---------------------------------------------------------------------
+Before writing any code, run a grilling session with me:
+ - Interview me relentlessly about every aspect of this plan until we
+   reach a shared understanding. Walk down each branch of the design
+   tree, resolving dependencies between decisions one by one.
+ - Ask ONE question at a time and wait for my answer before the next.
+   For every question, give your recommended answer and a one-line why.
+ - If a FACT can be found by reading this prompt, the repo, docs or a
+   primary source, look it up instead of asking me. The DECISIONS are
+   mine: put each one to me and wait.
+ - Do NOT start M0 until I confirm we have reached a shared understanding.
+Branches to cover (in dependency order; add any you find):
+  1. Purpose and end user: personal research, a desk tool, or a
+     product; is live trading ever in scope?
+  2. Capital, max loss per event, max concurrent events, risk appetite
+     for undefined-risk structures.
+  3. Event priority for the first release (results only? + RBI/Budget/
+     elections? which "other" classes, if any).
+  4. Universe: which stocks/indices; minimum liquidity; history depth.
+  5. Data budget and vendors: EOD bhavcopy only vs Dhan/Upstox intraday
+     vs a paid quote vendor (GDFL/TrueData); whether to start recording
+     live quote snapshots now.
+  6. Announcement-timestamp source and how much manual cleaning I accept.
+  7. Default fill tier and spread model when no bid/ask exists.
+  8. Margin model: approximate SPAN grid vs NSE SPAN files.
+  9. Which strategies ship first; which selection thresholds are fixed
+     priors vs calibrated.
+ 10. Statistical bar: holdout length, t-threshold, DSR/PBO gates for
+     calling a result "real".
+ 11. Tech stack and runtime: local machine vs cloud, storage size,
+     Streamlit vs other UI, scheduling.
+ 12. Verification ownership: who confirms each UNVERIFIED item in
+     section 16 and how blocking it is.
+Record every answer in docs/DESIGN_DECISIONS.md (question, options,
+decision, rationale, date) and treat it as binding config. Where an answer
+conflicts with this prompt, the answer wins; note the change. At the start
+of each later milestone, run a short grilling round on any new decisions
+that milestone raises before coding it.
+
+---------------------------------------------------------------------
 1. OBJECTIVES
 ---------------------------------------------------------------------
 Build, end to end, a point-in-time research and backtesting engine that:
@@ -545,11 +586,14 @@ nse_event_vol/
   app/               streamlit_app.py
   tests/             unit/, property/, golden/, integration/
   notebooks/         exploratory only; nothing imported from here
-  docs/              METHODOLOGY.md, DATA_SOURCES.md, VERIFICATION_LOG.md
+  docs/              DESIGN_DECISIONS.md, METHODOLOGY.md, DATA_SOURCES.md,
+                     VERIFICATION_LOG.md
 
 ---------------------------------------------------------------------
 14. PHASED MILESTONES
 ---------------------------------------------------------------------
+Pre-M0 Grilling session (section 0) completed and DESIGN_DECISIONS.md
+   confirmed by me. No code before this.
 M0 Verification & config: build VERIFICATION_LOG.md; populate
    config/*.yaml; every UNVERIFIED item below either confirmed from a
    primary NSE/SEBI/RBI/MOSPI source (URL + circular no. + effective date)
@@ -654,8 +698,8 @@ that prints a warning banner on every report.
 Report every conclusion with its sample size, regime, fill tier and
 confidence interval. If the data says NO TRADE for an event class, say so.
 
-DELIVERABLES: the repository above, passing CI, a METHODOLOGY.md, a
-VERIFICATION_LOG.md, the event-metrics panel (Parquet), backtest ledgers,
+DELIVERABLES: the repository above, passing CI, a DESIGN_DECISIONS.md, a
+METHODOLOGY.md, a VERIFICATION_LOG.md, the event-metrics panel (Parquet), backtest ledgers,
 tearsheets per event type and strategy, and the Streamlit app with the
 upcoming-event screener. Work milestone by milestone; at the end of each,
 summarise what was built, what was verified, and open risks.
