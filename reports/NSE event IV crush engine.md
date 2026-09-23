@@ -698,6 +698,40 @@ that prints a warning banner on every report.
 Report every conclusion with its sample size, regime, fill tier and
 confidence interval. If the data says NO TRADE for an event class, say so.
 
+---------------------------------------------------------------------
+18. WORKING IN AN AGENTIC IDE (GOOGLE ANTIGRAVITY OR SIMILAR)
+---------------------------------------------------------------------
+This prompt is model- and tool-agnostic; these rules apply to whichever
+agent/model runs it (Antigravity with Gemini, Claude, or another model).
+ - Persistent context: keep a repo-root rules file (AGENTS.md, and the
+   rules location Antigravity currently documents, if different) that
+   summarises this prompt and links docs/DESIGN_DECISIONS.md,
+   docs/METHODOLOGY.md and docs/VERIFICATION_LOG.md. Re-read them at the
+   start of every task; never rely on chat memory for decisions.
+ - One milestone = one task. Before coding, produce a written plan
+   (files, tests, risks) and wait for my approval; after coding, produce
+   a walkthrough (what changed, tests run with output, open risks).
+ - Tests first for every formula and rule in section 15; a task is not
+   done until `pytest`, `ruff` and `mypy` pass locally.
+ - No invented facts: the agent must not fill regulatory, cost, lot-size,
+   calendar or API-behaviour values from model memory. Look them up from a
+   primary source or leave them UNVERIFIED per section 16.
+ - Secrets: Upstox/Dhan API keys and tokens live only in macOS Keychain or
+   an untracked .env; never in code, logs, prompts or commits. Add
+   .env and data/ to .gitignore before the first commit.
+ - Safety: no order-placement endpoints anywhere in the codebase; the
+   browser/terminal agent must not log in to broker accounts or run
+   destructive commands (rm -rf, force-push, dropping data/) without my
+   explicit approval.
+ - Autonomy: agent may run read-only commands and tests freely; any
+   command that downloads bulk data, spends money (Dhan subscription,
+   cloud VM) or writes outside the repo needs my approval.
+ - Reproducibility: pin dependencies (uv or pip-tools lockfile); every
+   backtest run logs to trial_registry regardless of which model ran it.
+ - Local environment: macOS (Apple Silicon assumed; confirm), Python 3.12
+   via uv or pyenv, Homebrew for system packages; recorder deploy target
+   is a Linux VM, so keep recorder code OS-independent.
+
 DELIVERABLES: the repository above, passing CI, a DESIGN_DECISIONS.md, a
 METHODOLOGY.md, a VERIFICATION_LOG.md, the event-metrics panel (Parquet), backtest ledgers,
 tearsheets per event type and strategy, and the Streamlit app with the
