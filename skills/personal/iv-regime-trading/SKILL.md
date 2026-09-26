@@ -7,7 +7,7 @@ description: Run my IV-regime options playbook for NSE index/stock and MCX commo
 
 My rules live in [RULES.md](./RULES.md). They are fixed decisions, not suggestions — apply them as written and flag any deviation instead of improvising. Every threshold there is a **starting value under validation**; the current stage of the rollout decides the size I'm allowed to trade.
 
-The backtester and daily regime tool is the `iv-regime-backtester` repo (`ivrb` CLI). Prefer running it over estimating numbers by hand.
+The backtester and daily regime tool is the `iv-regime-backtester` repo (`ivrb` CLI): `ivrb regime` for the daily check, `ivrb backtest` for index condors, `ivrb backtest-stocks` for the results trades. Prefer running it over estimating numbers by hand.
 
 ## Daily regime check
 
@@ -26,4 +26,4 @@ Check the exit rules in RULES.md in their stated order (first match wins) agains
 
 ## Where the system stands
 
-Rollout stage (update this line as it changes): **Stage 1 — backtesting.** Milestones 1–2 (regime engine, index iron condor) built; stock, MCX and portfolio simulation not yet. Until a trade type passes its gates, it is paper-only.
+Rollout stage (update this line as it changes): **Stage 1 — backtesting.** Milestones 1–3 (regime engine, index iron condor, stock run-up and crush) built; MCX and portfolio simulation not yet. Until a trade type passes its gates, it is paper-only.
