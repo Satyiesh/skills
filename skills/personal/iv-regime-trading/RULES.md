@@ -15,7 +15,7 @@ First match wins:
 
 ## Risk budget
 
-- Max loss per trade: index condor ₹20k · stock crush ₹15k · crude ₹15k · metals ₹10k · any long-vol ₹10k premium.
+- Max loss per trade: index condor ₹20k · stock crush ₹15k · stock run-up ₹10k at its −40% stop (premium ≤ ₹25k) · crude ₹15k · metals ₹10k · commodity long-vol ₹10k premium.
 - Total open max-loss ≤ ₹60k. Book loss on +5 vol pts ≤ ₹30k.
 - One underlying/correlated group (e.g. BANKNIFTY + bank stocks) ≤ 40% of total risk. Commodities combined ≤ ₹24k.
 - One event-crush trade at a time.
@@ -26,8 +26,8 @@ First match wins:
 | # | Trade | Regime | Entry | Structure | Exit |
 |---|---|---|---|---|---|
 | 1 | NIFTY/BANKNIFTY monthly iron condor | SELL | 30–45 DTE, monthly expiry; no event ≤ 10 days | Shorts 15–20 Δ, symmetric wings, credit ≥ ⅓ width, max loss ≤ ₹20k | 50% of credit · 21 DTE · 7 days before event · loss = 2× credit · short Δ ≥ 0.30 |
-| 2 | Stock pre-earnings run-up | BUY-style | 10–15 days before results, IVP ≤ 30 | Long ATM straddle/strangle ≤ ₹10k | Close day before results; +30% / −40% |
-| 3 | Stock earnings crush | EVENT_CRUSH | Near close before results; implied move > avg actual move of last 8 results | Iron fly / tight condor, wings just past implied move, max loss ≤ ₹15k | Next morning, win or lose |
+| 2 | Stock pre-earnings run-up | BUY-style | 10–15 days before results, event-expiry ATM IV ≤ its median at the same distance over the last 8 cycles (min 4) | Long ATM straddle (strangle 1 step OTM if over cap), premium ≤ ₹25k, risk = −40% stop ≤ ₹10k | Close day before results; +30% / −40% |
+| 3 | Stock earnings crush | EVENT_CRUSH | Close before results; event move extracted from the first two monthly expiries after results, expected abs move (s.d. × √(2/π)) > avg actual move of last 8 results | Iron fly, wings at first strikes beyond ± one event s.d., max loss ≤ ₹15k | Next morning, win or lose |
 | 4 | Crude Oil mini condor | SELL | 25–35 DTE | Shorts 10–15 Δ, max loss ≤ ₹15k | 50% / 2× credit; before OPEC+; never into expiry |
 | 5 | Crude Oil mini strangle | BUY | IVP ≤ 20, OPEC+/geopolitical deadline 5–15 days out | Long strangle ≤ ₹10k | At/before the event |
 | 6 | Gold mini **or** Silver mini condor | SELL | Monthly | Shorts 12–18 Δ, max loss ≤ ₹10k | 50% / 2× credit; before FOMC/US CPI; never into expiry |
