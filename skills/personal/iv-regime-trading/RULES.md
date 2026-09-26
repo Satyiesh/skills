@@ -28,12 +28,12 @@ First match wins:
 | 1 | NIFTY/BANKNIFTY monthly iron condor | SELL | 30–45 DTE, monthly expiry; no event ≤ 10 days | Shorts 15–20 Δ, symmetric wings, credit ≥ ⅓ width, max loss ≤ ₹20k | 50% of credit · 21 DTE · 7 days before event · loss = 2× credit · short Δ ≥ 0.30 |
 | 2 | Stock pre-earnings run-up | BUY-style | 10–15 days before results, event-expiry ATM IV ≤ its median at the same distance over the last 8 cycles (min 4) | Long ATM straddle (strangle 1 step OTM if over cap), premium ≤ ₹25k, risk = −40% stop ≤ ₹10k | Close day before results; +30% / −40% |
 | 3 | Stock earnings crush | EVENT_CRUSH | Close before results; event move extracted from the first two monthly expiries after results, expected abs move (s.d. × √(2/π)) > avg actual move of last 8 results | Iron fly, wings at first strikes beyond ± one event s.d., max loss ≤ ₹15k | Next morning, win or lose |
-| 4 | Crude Oil mini condor | SELL | 25–35 DTE | Shorts 10–15 Δ, max loss ≤ ₹15k | 50% / 2× credit; before OPEC+; never into expiry |
-| 5 | Crude Oil mini strangle | BUY | IVP ≤ 20, OPEC+/geopolitical deadline 5–15 days out | Long strangle ≤ ₹10k | At/before the event |
-| 6 | Gold mini **or** Silver mini condor | SELL | Monthly | Shorts 12–18 Δ, max loss ≤ ₹10k | 50% / 2× credit; before FOMC/US CPI; never into expiry |
-| 7 | Gold/Silver mini strangle | BUY | IVP ≤ 20 ahead of FOMC/US CPI | Long strangle ≤ ₹10k | At/before the event |
+| 4 | Crude Oil mini condor | SELL | 25–35 DTE; no OPEC+ within 7 days | Shorts 10–15 Δ, wings ~5 Δ, credit ≥ 20% of wider wing, max loss ≤ ₹15k | 50% · 2× credit · short Δ ≥ 0.30 · OPEC+ within 3 days · 10 DTE |
+| 5 | Crude Oil mini strangle | BUY | IVP ≤ 20, IV ≤ RV, OPEC+/geopolitical deadline 5–15 days out | Long 25 Δ call + put on the first expiry spanning the event, ≤ ₹10k | Close before the event; +30% / −40% |
+| 6 | Gold mini **or** Silver mini condor | SELL | 25–35 DTE; no FOMC/US CPI within 7 days | Shorts 12–18 Δ, wings ~5 Δ, credit ≥ 20% of wider wing, max loss ≤ ₹10k | 50% · 2× credit · short Δ ≥ 0.30 · FOMC/CPI within 3 days · 10 DTE |
+| 7 | Gold/Silver mini strangle | BUY | IVP ≤ 20, IV ≤ RV, FOMC/US CPI 5–15 days out | Long 25 Δ call + put, ≤ ₹10k | Close before the event; +30% / −40% |
 
-Universe: stocks = top ~30 F&O names with ATM spread ≤ 1% of premium; MCX minis need ATM spread ≤ 2% of premium and usable OI. No weekly options. No natural gas until capital > ₹25 lakh. Gold and Silver never together.
+Universe: stocks = top ~30 F&O names with ATM spread ≤ 1% of premium; MCX minis need ATM spread ≤ 2% of premium and usable OI. No weekly options. No natural gas until capital > ₹25 lakh. Gold and Silver never together — if both qualify, the larger IV − RV gap wins a sell, the lower IVP wins a buy. One MCX position per group (energy, metals); full-size crude only if the mini fails liquidity.
 
 ## Pre-trade checklist
 
