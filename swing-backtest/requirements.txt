@@ -1,3 +1,4 @@
 pandas>=2.0
 numpy>=1.24
-yfinance>=0.2.40   # optional: only needed to download prices; CSV input works without it
+yfinance>=0.2.40   # optional: US downloads; CSV input works without it
+requests>=2.31     # optional: NSE bhavcopy downloader

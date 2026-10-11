@@ -26,7 +26,7 @@ DEFAULT_SECTORS = {
 }
 
 
-def _read_csv(p):
+def read_ohlcv_csv(p):
     df = pd.read_csv(p, parse_dates=["Date"], index_col="Date").sort_index()
     return df[["Open", "High", "Low", "Close", "Volume"]].dropna()
 
@@ -59,7 +59,7 @@ def load_prices(tickers, data_dir, start, end):
     for t in tickers:
         p = data_dir / f"{t}.csv"
         if p.exists():
-            out[t] = _read_csv(p)
+            out[t] = read_ohlcv_csv(p)
         else:
             missing.append(t)
     if missing:

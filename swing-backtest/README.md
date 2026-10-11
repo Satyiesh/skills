@@ -11,6 +11,23 @@ python run.py --start 2012-01-01 --split 2020-01-01   # yfinance download, CSVs 
 
 Outputs `results/trades.csv` (every trade) and `results/summary.csv` (strategy × IS/OOS/ALL × regime).
 
+## Indian market (NSE bhavcopy, ~10 years)
+```bash
+python -m swingbt.bhavcopy download --start 2016-10-01     # ~2,500 daily files, resumable, ~0.25s polite delay
+python -m swingbt.bhavcopy build                           # -> data/nse/*.csv (adjusted) + adjustments.csv
+python run.py --market nse --split 2022-01-01 [--sectors sectors.csv]
+```
+* Raw bhavcopy is **unadjusted**. `build` derives split/bonus factors from NSE's own PREVCLOSE and writes every
+  detected event to `data/nse/adjustments.csv`; spot-check a few known splits before trusting results.
+* Universe floors default to price > Rs50 and 20d traded value > Rs10 crore; costs default to 12 bps/side
+  (STT, brokerage, GST, stamp, exchange fees) plus 10 bps slippage. Override with `--min-price/--min-dvol/--comm-bps`.
+* Benchmark/regime = Nifty 50 (index bhavcopy). S08 needs `--sectors` (`symbol,index`, e.g. `INFY,Nifty IT`).
+  S07 (no short-interest series in India) and S09 are skipped; S02 runs in price-only mode.
+* Long-only. NSE circuit limits can make stops un-fillable on gap-downs; the engine fills gapped stops at the open,
+  which understates that risk for circuit-locked names.
+* The download URLs were written from memory of NSE's archive layout and could not be tested from the sandbox
+  (NSE is blocked there). If a day fails, adjust the URL constants at the top of `swingbt/bhavcopy.py`.
+
 ## Strategies and data needs
 | ID | Strategy | Extra data |
 |---|---|---|
