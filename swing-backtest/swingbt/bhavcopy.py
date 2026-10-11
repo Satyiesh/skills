@@ -243,7 +243,14 @@ def read_lake(lake_dir, series=("EQ", "BE")):
 
 
 def build_from_lake(lake_dir, out_dir, min_rows=300):
-    n_sym, n_ev = _write_adjusted(read_lake(lake_dir), Path(out_dir), min_rows)
+    df = read_lake(lake_dir)
+    n_days = df.date.nunique()
+    print(f"lake: {n_days} trading days ({df.date.min():%Y-%m-%d} to {df.date.max():%Y-%m-%d}), "
+          f"{len(df):,} rows, {df.symbol.nunique()} symbols")
+    n_sym, n_ev = _write_adjusted(df, Path(out_dir), min_rows)
+    if n_sym == 0:
+        raise SystemExit(f"0 symbols have >= {min_rows} trading days of history (the lake has only {n_days} days). "
+                         "Rebuild the lake in full (`python -m src.cli build`, not --limit) or lower --min-rows.")
     print(f"wrote {n_sym} symbols, {n_ev} corporate-action events and IDX_MKT_PROXY -> {out_dir}")
 
 

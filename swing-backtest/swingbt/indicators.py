@@ -30,7 +30,7 @@ def rsi(s, n=2):
 
 def sh(b, k=1):
     """Shift a boolean series, treating the unknown as False."""
-    return b.shift(k).fillna(False).astype(bool)
+    return b.shift(k, fill_value=False).astype(bool)
 
 
 def add_features(df, atr_min=0.035, min_price=5.0, min_dollar_vol=20e6):
