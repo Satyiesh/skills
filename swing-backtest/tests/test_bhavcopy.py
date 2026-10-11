@@ -70,3 +70,39 @@ class Bhav(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Lake(unittest.TestCase):
+    def test_lake_to_adjusted_csv_and_proxy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            lake = Path(tmp) / "parquet"
+            days = pd.bdate_range("2023-01-02", periods=330)
+            px = {"AAA": 1000.0, "BBB": 50.0, "CCC": 80.0}
+            prev = dict(px)
+            rng = np.random.default_rng(0)
+            for i, d in enumerate(days):
+                rows = []
+                for s in px:
+                    pc = prev[s]
+                    if s == "AAA" and i == 200:      # 1:2 split; NSE publishes the adjusted prev close
+                        pc, px[s] = pc / 2, px[s] / 2
+                    new = px[s] * (1 + rng.normal(0, 0.01))
+                    rows.append(dict(date=d.date(), symbol=s, series="EQ", open=px[s], high=max(px[s], new) * 1.01,
+                                     low=min(px[s], new) * 0.99, close=new, prev_close=pc, volume=1000,
+                                     turnover=0.0, isin="X"))
+                    prev[s], px[s] = new, new
+                rows.append(dict(date=d.date(), symbol="JUNK", series="BZ", open=1.0, high=1.0, low=1.0, close=1.0,
+                                 prev_close=1.0, volume=1, turnover=0.0, isin="Y"))
+                out = lake / f"year={d.year}" / f"month={d.month:02d}"
+                out.mkdir(parents=True, exist_ok=True)
+                pd.DataFrame(rows).to_parquet(out / f"date={d.date()}.parquet")
+            o = Path(tmp) / "nse"
+            bc.build_from_lake(lake, o)
+            self.assertFalse((o / "JUNK.csv").exists(), "BZ series must be excluded")
+            a = pd.read_csv(o / "AAA.csv", index_col="Date", parse_dates=True)
+            self.assertLess((a.Close / a.Close.shift(1) - 1).abs().max(), 0.06)
+            ev = pd.read_csv(o / "adjustments.csv")
+            self.assertEqual(list(ev.symbol), ["AAA"])
+            m = pd.read_csv(o / "IDX_MKT_PROXY.csv", index_col="Date")
+            self.assertEqual(len(m), 330)
+            self.assertTrue((m.Close > 0).all())

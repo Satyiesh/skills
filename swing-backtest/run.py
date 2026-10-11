@@ -60,12 +60,15 @@ def main(argv=None):
         print("!! SYNTHETIC DATA: plumbing check only, numbers are meaningless !!", file=sys.stderr)
     elif nse:
         d = Path(a.data_dir)
-        if not (d / "IDX_NIFTY_50.csv").exists():
-            sys.exit(f"{d}/IDX_NIFTY_50.csv not found -- run: python -m swingbt.bhavcopy download && build")
+        bench = next((n for n in ("IDX_NIFTY_50", "IDX_MKT_PROXY") if (d / f"{n}.csv").exists()), None)
+        if bench is None:
+            sys.exit(f"no benchmark in {d} -- run: python -m swingbt.bhavcopy build  (or build-lake)")
+        if bench == "IDX_MKT_PROXY":
+            print("benchmark: IDX_MKT_PROXY (equal-weight top-200 liquid stocks), not Nifty 50", file=sys.stderr)
         trim = lambda df: df.loc[a.start:a.end]
         prices = {p.stem: trim(read_ohlcv_csv(p)) for p in sorted(d.glob("*.csv"))
                   if not p.stem.startswith("IDX_")}
-        spy = trim(read_ohlcv_csv(d / "IDX_NIFTY_50.csv"))
+        spy = trim(read_ohlcv_csv(d / f"{bench}.csv"))
         # --sectors csv: symbol,index   (index like "Nifty Bank" or IDX_NIFTY_BANK); S08 is skipped without it
         sectors = {}
         if a.sectors:

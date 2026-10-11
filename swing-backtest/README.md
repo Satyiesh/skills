@@ -12,6 +12,16 @@ python run.py --start 2012-01-01 --split 2020-01-01   # yfinance download, CSVs 
 Outputs `results/trades.csv` (every trade) and `results/summary.csv` (strategy × IS/OOS/ALL × regime).
 
 ## Indian market (NSE bhavcopy, ~10 years)
+**Already have the parquet lake from `Satyiesh/NSESwingQuant`?** Skip the download:
+```bash
+python -m swingbt.bhavcopy build-lake --lake /Users/<you>/projects/NseSwingQuant/data/parquet --out-dir data/nse
+python run.py --market nse --split 2022-01-01
+```
+It reads EQ + BE rows (BZ excluded), derives split/bonus factors from `prev_close`, and writes `adjustments.csv`.
+The lake has no index series, so the benchmark is `IDX_MKT_PROXY` (equal-weight return of the 200 most liquid
+stocks, liquidity lagged one day); drop a real `IDX_NIFTY_50.csv` into `data/nse/` to use Nifty 50 instead.
+
+Or download the raw files yourself:
 ```bash
 python -m swingbt.bhavcopy download --start 2016-10-01     # ~2,500 daily files, resumable, ~0.25s polite delay
 python -m swingbt.bhavcopy build                           # -> data/nse/*.csv (adjusted) + adjustments.csv

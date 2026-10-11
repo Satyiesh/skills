@@ -162,31 +162,53 @@ def adjust_symbol(g, day_no, noise=0.001):
     return out[["date", "open", "high", "low", "close", "volume"]], events
 
 
-def build(raw_dir, out_dir, min_rows=300):
-    raw, out = Path(raw_dir), Path(out_dir)
+def _write_adjusted(allp, out, min_rows):
+    """allp: long frame [date,symbol,open,high,low,close,prev_close,volume] (unadjusted).
+    Writes adjusted per-symbol CSVs, adjustments.csv and the IDX_MKT_PROXY benchmark."""
     out.mkdir(parents=True, exist_ok=True)
-    frames = []
-    for f in sorted((raw / "cm").glob("*.bin")):
-        frames.append(parse_cm(f.read_bytes(), pd.Timestamp(f.stem)))
-    if not frames:
-        raise SystemExit(f"no equity files in {raw / 'cm'} -- run `download` first")
-    allp = pd.concat(frames, ignore_index=True)
     dates = np.sort(allp.date.unique())
+    allp = allp.copy()
     allp["day_no"] = np.searchsorted(dates, allp.date.to_numpy())
     allp = allp.sort_values(["symbol", "date"], kind="stable").drop_duplicates(["symbol", "date"], keep="last")
     allp = allp.reset_index(drop=True)
     day_no = allp.day_no.to_numpy()
-    n_sym, events = 0, []
+    n_sym, events, closes, dvol = 0, [], {}, {}
     for sym, g in allp.groupby("symbol", sort=False):
         if len(g) < min_rows:
             continue
         adj, ev = adjust_symbol(g.reset_index(drop=False).set_index("index"), day_no)
-        adj.set_index("date").to_csv(out / f"{sym}.csv", index_label="Date",
-                                     header=["Open", "High", "Low", "Close", "Volume"], float_format="%.4f")
+        adj = adj.set_index("date")
+        adj.to_csv(out / f"{sym}.csv", index_label="Date",
+                   header=["Open", "High", "Low", "Close", "Volume"], float_format="%.4f")
+        closes[sym], dvol[sym] = adj.close, adj.close * adj.volume
         events.append(ev.assign(symbol=sym))
         n_sym += 1
     ev = pd.concat(events) if events else pd.DataFrame(columns=["date", "ratio", "symbol"])
     ev[["symbol", "date", "ratio"]].to_csv(out / "adjustments.csv", index=False)
+    if closes:
+        write_market_proxy(pd.DataFrame(closes), pd.DataFrame(dvol), out)
+    return n_sym, len(ev)
+
+
+def write_market_proxy(closes, dvol, out, top_n=200):
+    """Benchmark when no index file exists: equal-weight return of the top_n most liquid stocks, where
+    liquidity is the PRIOR day's 20d average traded value (no lookahead). Daily returns clipped at +-40%
+    so a bad adjustment cannot swing the series. Written as IDX_MKT_PROXY.csv (O=H=L=C)."""
+    r = closes.pct_change(fill_method=None).clip(-0.4, 0.4)
+    liq = dvol.rolling(20, min_periods=10).mean().shift(1)
+    top = liq.rank(axis=1, ascending=False) <= top_n
+    m = r.where(top).mean(axis=1).fillna(0.0)
+    lvl = 1000 * (1 + m).cumprod()
+    pd.DataFrame({"Open": lvl, "High": lvl, "Low": lvl, "Close": lvl, "Volume": 0.0}).to_csv(
+        Path(out) / "IDX_MKT_PROXY.csv", index_label="Date")
+
+
+def build(raw_dir, out_dir, min_rows=300):
+    raw, out = Path(raw_dir), Path(out_dir)
+    frames = [parse_cm(f.read_bytes(), pd.Timestamp(f.stem)) for f in sorted((raw / "cm").glob("*.bin"))]
+    if not frames:
+        raise SystemExit(f"no equity files in {raw / 'cm'} -- run `download` first")
+    n_sym, n_ev = _write_adjusted(pd.concat(frames, ignore_index=True), out, min_rows)
 
     ifr = [parse_index(f.read_bytes(), pd.Timestamp(f.stem)) for f in sorted((raw / "idx").glob("*.bin"))]
     n_idx = 0
@@ -197,7 +219,32 @@ def build(raw_dir, out_dir, min_rows=300):
             g.assign(Volume=0.0)[["open", "high", "low", "close", "Volume"]].to_csv(
                 out / f"{key}.csv", index_label="Date", header=["Open", "High", "Low", "Close", "Volume"])
             n_idx += 1
-    print(f"wrote {n_sym} symbols, {n_idx} indices, {len(ev)} corporate-action events -> {out}")
+    print(f"wrote {n_sym} symbols, {n_idx} indices, {n_ev} corporate-action events -> {out}")
+
+
+LAKE_COLS = ["date", "symbol", "series", "open", "high", "low", "close", "prev_close", "volume"]
+
+
+def read_lake(lake_dir, series=("EQ", "BE")):
+    """Read NseSwingQuant's parquet lake: <lake>/year=YYYY/month=MM/date=YYYY-MM-DD.parquet with columns
+    date,symbol,series,open,high,low,close,prev_close,volume,turnover,isin (unadjusted).
+    BZ (trade-to-trade, surveillance) is excluded. If a symbol shows under two series on one day, EQ wins."""
+    files = sorted(Path(lake_dir).glob("year=*/month=*/date=*.parquet"))
+    if not files:
+        raise SystemExit(f"no parquet files under {lake_dir}/year=*/month=*/ -- is this the lake's data/parquet dir?")
+    df = pd.concat([pd.read_parquet(f, columns=LAKE_COLS) for f in files], ignore_index=True)
+    df["date"] = pd.to_datetime(df["date"])
+    df = df[df.series.isin(series)]
+    df = df.assign(_eq=(df.series != "EQ")).sort_values(["symbol", "date", "_eq"])
+    df = df.drop_duplicates(["symbol", "date"], keep="first").drop(columns=["_eq", "series"])
+    for c in ("open", "high", "low", "close", "prev_close", "volume"):
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    return df[(df.close > 0) & (df.open > 0)].reset_index(drop=True)
+
+
+def build_from_lake(lake_dir, out_dir, min_rows=300):
+    n_sym, n_ev = _write_adjusted(read_lake(lake_dir), Path(out_dir), min_rows)
+    print(f"wrote {n_sym} symbols, {n_ev} corporate-action events and IDX_MKT_PROXY -> {out_dir}")
 
 
 def main(argv=None):
@@ -212,8 +259,14 @@ def main(argv=None):
     b.add_argument("--raw-dir", default="data/bhav_raw")
     b.add_argument("--out-dir", default="data/nse")
     b.add_argument("--min-rows", type=int, default=300)
+    L = sub.add_parser("build-lake", help="build from NseSwingQuant's parquet lake instead of raw downloads")
+    L.add_argument("--lake", required=True, help="path to NseSwingQuant data/parquet")
+    L.add_argument("--out-dir", default="data/nse")
+    L.add_argument("--min-rows", type=int, default=300)
     a = ap.parse_args(argv)
-    if a.cmd == "download":
+    if a.cmd == "build-lake":
+        build_from_lake(a.lake, a.out_dir, a.min_rows)
+    elif a.cmd == "download":
         download(a.start, a.end, a.raw_dir, a.delay)
     else:
         build(a.raw_dir, a.out_dir, a.min_rows)
