@@ -1,0 +1,3 @@
+pandas>=2.0
+numpy>=1.24
+yfinance>=0.2.40   # optional: only needed to download prices; CSV input works without it
